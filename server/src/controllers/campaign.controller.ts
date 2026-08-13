@@ -1,13 +1,13 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { createCampaign } from "../services/campaign.service.js";
+import { AuthenticatedRequest } from "../middleware/auth.middleware.js";
 
 export async function createCampaignController(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
     const {
-      userId,
       subject,
       body,
       startTime,
@@ -15,8 +15,10 @@ export async function createCampaignController(
       hourlyLimit,
     } = req.body;
 
+    const targetUserId = req.user?.userId || req.body.userId;
+
     if (
-      !userId ||
+      !targetUserId ||
       !subject ||
       !body ||
       !startTime ||
@@ -30,7 +32,7 @@ export async function createCampaignController(
     }
 
     const campaign = await createCampaign({
-      userId,
+      userId: targetUserId,
       subject,
       body,
       startTime: new Date(startTime),

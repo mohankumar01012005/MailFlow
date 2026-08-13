@@ -29,11 +29,14 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const { body, headers, ...rest } = options;
   const isFormData = body instanceof FormData;
 
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem("mailflow_token") : null;
+  const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
   const response = await fetch(`${BASE_URL}${path}`, {
     ...rest,
     headers: isFormData
-      ? headers
-      : { "Content-Type": "application/json", ...headers },
+      ? { ...authHeader, ...headers }
+      : { "Content-Type": "application/json", ...authHeader, ...headers },
     body: isFormData ? body : body ? JSON.stringify(body) : undefined,
   });
 

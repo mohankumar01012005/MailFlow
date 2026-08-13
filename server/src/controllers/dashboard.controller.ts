@@ -1,25 +1,24 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import {
   getDashboardStats,
   getAnalyticsData,
 } from "../services/dashboard.service.js";
+import { AuthenticatedRequest } from "../middleware/auth.middleware.js";
 
 export async function getDashboardStatsController(
-  _req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
-    const stats = await getDashboardStats();
+    const userId = req.user?.userId;
+    const stats = await getDashboardStats(userId);
 
     return res.status(200).json({
       success: true,
       stats,
     });
   } catch (error) {
-    console.error(
-      "Failed to fetch dashboard stats:",
-      error
-    );
+    console.error("Failed to fetch dashboard stats:", error);
 
     return res.status(500).json({
       success: false,
@@ -29,11 +28,12 @@ export async function getDashboardStatsController(
 }
 
 export async function getAnalyticsController(
-  _req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
-    const analytics = await getAnalyticsData();
+    const userId = req.user?.userId;
+    const analytics = await getAnalyticsData(userId);
 
     return res.status(200).json({
       success: true,

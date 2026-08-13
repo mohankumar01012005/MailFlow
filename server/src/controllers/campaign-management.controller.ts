@@ -1,26 +1,25 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import {
   getAllCampaigns,
   getCampaignById,
   getCampaignEmails,
 } from "../services/campaign-management.service.js";
+import { AuthenticatedRequest } from "../middleware/auth.middleware.js";
 
 export async function getAllCampaignsController(
-  _req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
-    const campaigns = await getAllCampaigns();
+    const userId = req.user?.userId;
+    const campaigns = await getAllCampaigns(userId);
 
     return res.status(200).json({
       success: true,
       campaigns,
     });
   } catch (error) {
-    console.error(
-      "Failed to fetch campaigns:",
-      error
-    );
+    console.error("Failed to fetch campaigns:", error);
 
     return res.status(500).json({
       success: false,
@@ -30,13 +29,14 @@ export async function getAllCampaignsController(
 }
 
 export async function getCampaignByIdController(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
     const campaignId = String(req.params.campaignId);
+    const userId = req.user?.userId;
 
-    const campaign = await getCampaignById(campaignId);
+    const campaign = await getCampaignById(campaignId, userId);
 
     if (!campaign) {
       return res.status(404).json({
@@ -50,10 +50,7 @@ export async function getCampaignByIdController(
       campaign,
     });
   } catch (error) {
-    console.error(
-      "Failed to fetch campaign:",
-      error
-    );
+    console.error("Failed to fetch campaign:", error);
 
     return res.status(500).json({
       success: false,
@@ -63,13 +60,14 @@ export async function getCampaignByIdController(
 }
 
 export async function getCampaignEmailsController(
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) {
   try {
     const campaignId = String(req.params.campaignId);
+    const userId = req.user?.userId;
 
-    const emails = await getCampaignEmails(campaignId);
+    const emails = await getCampaignEmails(campaignId, userId);
 
     if (emails === null) {
       return res.status(404).json({
@@ -83,10 +81,7 @@ export async function getCampaignEmailsController(
       emails,
     });
   } catch (error) {
-    console.error(
-      "Failed to fetch campaign emails:",
-      error
-    );
+    console.error("Failed to fetch campaign emails:", error);
 
     return res.status(500).json({
       success: false,

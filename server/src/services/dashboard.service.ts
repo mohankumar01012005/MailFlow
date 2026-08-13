@@ -1,6 +1,9 @@
 import { prisma } from "../prisma.js";
 
-export async function getDashboardStats() {
+export async function getDashboardStats(userId?: string) {
+  const userFilter = userId ? { userId } : {};
+  const emailUserFilter = userId ? { campaign: { userId } } : {};
+
   const [
     totalCampaigns,
     totalEmails,
@@ -9,30 +12,34 @@ export async function getDashboardStats() {
     sentEmails,
     failedEmails,
   ] = await Promise.all([
-    prisma.campaign.count(),
+    prisma.campaign.count({ where: userFilter }),
 
-    prisma.scheduledEmail.count(),
+    prisma.scheduledEmail.count({ where: emailUserFilter }),
 
     prisma.scheduledEmail.count({
       where: {
+        ...emailUserFilter,
         status: "SCHEDULED",
       },
     }),
 
     prisma.scheduledEmail.count({
       where: {
+        ...emailUserFilter,
         status: "PROCESSING",
       },
     }),
 
     prisma.scheduledEmail.count({
       where: {
+        ...emailUserFilter,
         status: "SENT",
       },
     }),
 
     prisma.scheduledEmail.count({
       where: {
+        ...emailUserFilter,
         status: "FAILED",
       },
     }),
@@ -48,8 +55,8 @@ export async function getDashboardStats() {
   };
 }
 
-export async function getAnalyticsData() {
-  const stats = await getDashboardStats();
+export async function getAnalyticsData(userId?: string) {
+  const stats = await getDashboardStats(userId);
 
   const successRate =
     stats.totalEmails > 0
@@ -62,6 +69,7 @@ export async function getAnalyticsData() {
       : 0;
 
   const campaigns = await prisma.campaign.findMany({
+    where: userId ? { userId } : {},
     orderBy: { createdAt: "desc" },
     include: {
       emails: {
@@ -99,6 +107,7 @@ export async function getAnalyticsData() {
     orderBy: { updatedAt: "desc" },
     where: {
       status: { in: ["SENT", "FAILED", "PROCESSING"] },
+      ...(userId ? { campaign: { userId } } : {}),
     },
     include: {
       campaign: {
