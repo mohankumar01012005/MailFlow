@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Send, Search, Filter } from "lucide-react";
-import type { Campaign, CampaignStatus } from "../../types/campaign";
+import type { Campaign } from "../../types/campaign";
 import { Badge } from "../ui/Badge";
 import { Skeleton } from "../ui/Skeleton";
 import { EmptyState } from "../ui/EmptyState";
