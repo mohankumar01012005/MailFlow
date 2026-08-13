@@ -5,6 +5,7 @@ import type { Campaign } from "../../types/campaign";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { useCampaignActions } from "../../hooks/useCampaignActions";
+import { useToast } from "../../context/ToastContext";
 
 interface CampaignActionsProps {
   campaign: Campaign;
@@ -34,6 +35,7 @@ const actionCopy: Record<Exclude<PendingAction, null>, { title: string; descript
 export function CampaignActions({ campaign }: CampaignActionsProps) {
   const [pending, setPending] = useState<PendingAction>(null);
   const { pause, resume, cancel } = useCampaignActions(campaign.id);
+  const { showWarning, showSuccess, showError } = useToast();
 
   const mutationFor: Record<Exclude<PendingAction, null>, typeof pause> = {
     pause,
@@ -43,8 +45,18 @@ export function CampaignActions({ campaign }: CampaignActionsProps) {
 
   const handleConfirm = () => {
     if (!pending) return;
+    const currentAction = pending;
     mutationFor[pending].mutate(undefined, {
-      onSuccess: () => setPending(null),
+      onSuccess: () => {
+        setPending(null);
+        if (currentAction === "pause") {
+          showWarning("Campaign Paused", "Pending emails will remain in queue until resumed.");
+        } else if (currentAction === "resume") {
+          showSuccess("Campaign Resumed", "Email delivery pipeline resumed.");
+        } else if (currentAction === "cancel") {
+          showError("Campaign Cancelled", "Remaining emails for this campaign have been cancelled.");
+        }
+      },
     });
   };
 

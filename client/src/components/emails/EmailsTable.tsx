@@ -7,6 +7,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { Button } from "../ui/Button";
 import { formatDate } from "../../lib/format";
 import { useRetryEmail } from "../../hooks/useRetryEmail";
+import { useToast } from "../../context/ToastContext";
 
 interface EmailsTableProps {
   emails: ScheduledEmail[] | undefined;
@@ -26,9 +27,21 @@ const EMAIL_STATUS_FILTERS = [
 export function EmailsTable({ emails, isLoading, isError, onRetry }: EmailsTableProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const { showSuccess, showError } = useToast();
 
   const firstCampaignId = emails?.[0]?.campaignId;
   const { retrySingle } = useRetryEmail(firstCampaignId);
+
+  const handleRetrySingle = (emailId: string, recipient: string) => {
+    retrySingle.mutate(emailId, {
+      onSuccess: () => {
+        showSuccess("Email Retry Queued", `Re-queued delivery job for ${recipient}.`);
+      },
+      onError: (err: any) => {
+        showError("Retry Failed", err.message || "Failed to retry email delivery.");
+      },
+    });
+  };
 
   if (isLoading) {
     return (
@@ -145,7 +158,7 @@ export function EmailsTable({ emails, isLoading, isError, onRetry }: EmailsTable
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => retrySingle.mutate(email.id)}
+                          onClick={() => handleRetrySingle(email.id, email.recipient)}
                           isLoading={retrySingle.isPending && retrySingle.variables === email.id}
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
@@ -184,7 +197,7 @@ export function EmailsTable({ emails, isLoading, isError, onRetry }: EmailsTable
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => retrySingle.mutate(email.id)}
+                      onClick={() => handleRetrySingle(email.id, email.recipient)}
                       isLoading={retrySingle.isPending && retrySingle.variables === email.id}
                     >
                       <RefreshCw className="h-3.5 w-3.5" />

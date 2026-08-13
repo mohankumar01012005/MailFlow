@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import type { User } from "../types/auth";
 import { authApi } from "../api/auth";
 
@@ -18,47 +18,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("mailflow_token"));
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const logout = useCallback(() => {
+    localStorage.removeItem("mailflow_token");
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  const login = useCallback((newToken: string, newUser: User) => {
+    localStorage.setItem("mailflow_token", newToken);
+    setToken(newToken);
+    setUser(newUser);
+  }, []);
+
+  const signup = useCallback((newToken: string, newUser: User) => {
+    localStorage.setItem("mailflow_token", newToken);
+    setToken(newToken);
+    setUser(newUser);
+  }, []);
+
   useEffect(() => {
+    let isMounted = true;
+
     async function loadMe() {
       if (!token) {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
         return;
       }
 
       try {
         const res = await authApi.getMe();
-        if (res.success && res.user) {
-          setUser(res.user);
-        } else {
-          logout();
+        if (isMounted) {
+          if (res.success && res.user) {
+            setUser(res.user);
+          } else {
+            logout();
+          }
         }
       } catch {
-        logout();
+        if (isMounted) logout();
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     }
 
     loadMe();
-  }, [token]);
 
-  function login(newToken: string, newUser: User) {
-    localStorage.setItem("mailflow_token", newToken);
-    setToken(newToken);
-    setUser(newUser);
-  }
-
-  function signup(newToken: string, newUser: User) {
-    localStorage.setItem("mailflow_token", newToken);
-    setToken(newToken);
-    setUser(newUser);
-  }
-
-  function logout() {
-    localStorage.removeItem("mailflow_token");
-    setToken(null);
-    setUser(null);
-  }
+    return () => {
+      isMounted = false;
+    };
+  }, [token, logout]);
 
   return (
     <AuthContext.Provider value={{ user, token, isLoading, login, signup, logout }}>

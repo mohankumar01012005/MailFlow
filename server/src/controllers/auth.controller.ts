@@ -3,6 +3,8 @@ import {
   registerUser,
   loginUser,
   getUserProfile,
+  getGoogleAuthUrl,
+  handleGoogleCallback,
 } from "../services/auth.service.js";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.js";
 
@@ -91,5 +93,36 @@ export async function getMeController(req: AuthenticatedRequest, res: Response) 
       success: false,
       message: "User not found.",
     });
+  }
+}
+
+export async function googleRedirectController(_req: Request, res: Response) {
+  const url = getGoogleAuthUrl();
+  return res.redirect(url);
+}
+
+export async function googleCallbackController(req: Request, res: Response) {
+  try {
+    const code = String(req.query.code || "");
+    if (!code) {
+      return res.redirect("http://localhost:5173/login?error=Google%20auth%20cancelled");
+    }
+
+    const { user, token } = await handleGoogleCallback(code);
+
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const redirectUrl = `${clientUrl}/login?token=${encodeURIComponent(
+      token
+    )}&user=${encodeURIComponent(JSON.stringify(user))}`;
+
+    return res.redirect(redirectUrl);
+  } catch (error) {
+    console.error("Google OAuth Error:", error);
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    return res.redirect(
+      `${clientUrl}/login?error=${encodeURIComponent(
+        "Google authentication failed"
+      )}`
+    );
   }
 }

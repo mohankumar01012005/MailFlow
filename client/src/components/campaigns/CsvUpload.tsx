@@ -6,6 +6,7 @@ import type { CsvValidationErrorData, ScheduleCampaignCsvResponse } from "../../
 import { Button } from "../ui/Button";
 import { Surface } from "../ui/Surface";
 import { ImportSummary } from "./ImportSummary";
+import { useToast } from "../../context/ToastContext";
 import { cn } from "../../lib/utils";
 
 interface CsvUploadProps {
@@ -18,6 +19,7 @@ export function CsvUpload({ campaignId, onScheduled }: CsvUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scheduleCsv = useScheduleCampaignCsv(campaignId);
+  const { showSuccess, showError } = useToast();
 
   const validationError =
     scheduleCsv.error instanceof ApiError
@@ -35,7 +37,16 @@ export function CsvUpload({ campaignId, onScheduled }: CsvUploadProps) {
   function handleUpload() {
     if (!file) return;
     scheduleCsv.mutate(file, {
-      onSuccess: (response) => onScheduled(response),
+      onSuccess: (response) => {
+        showSuccess(
+          "CSV List Imported",
+          `${response.importSummary.validEmails} valid recipients scheduled successfully.`
+        );
+        onScheduled(response);
+      },
+      onError: (err: any) => {
+        showError("CSV Processing Error", err.message || "Failed to process CSV file.");
+      },
     });
   }
 

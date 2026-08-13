@@ -4,6 +4,39 @@ import { redis } from "./redis.js";
 import { prisma } from "./prisma.js";
 import { sendEmail } from "./mailer.js";
 
+const WORKER_CONCURRENCY = Math.max(
+  1,
+  Number(process.env.WORKER_CONCURRENCY || 5)
+);
+
+export async function checkAndIncrementHourlyRateLimit(
+  campaignId: string,
+  limit: number
+): Promise<{ allowed: boolean; currentCount: number; limit: number; resetTimeMs: number }> {
+  const now = new Date();
+  const hourString = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}-${String(now.getUTCHours()).padStart(2, "0")}`;
+  const rateLimitKey = `rate_limit:${campaignId}:${hourString}`;
+
+  const currentCount = await redis.incr(rateLimitKey);
+
+  if (currentCount === 1) {
+    await redis.expire(rateLimitKey, 3600);
+  }
+
+  const nextHour = new Date(now);
+  nextHour.setUTCHours(now.getUTCHours() + 1, 0, 0, 0);
+  const resetTimeMs = Math.max(1000, nextHour.getTime() - now.getTime());
+
+  const allowed = currentCount <= limit;
+
+  return {
+    allowed,
+    currentCount,
+    limit,
+    resetTimeMs,
+  };
+}
+
 export const emailWorker = new Worker(
   "emailQueue",
   async (job) => {
@@ -32,6 +65,16 @@ export const emailWorker = new Worker(
       );
     }
 
+    if (scheduledEmail.status === "SENT") {
+      console.log(
+        `[Idempotency Guard] Job ${job.id} skipped: Email ${scheduledEmailId} is already SENT.`
+      );
+      return {
+        skipped: true,
+        reason: "Email already SENT",
+      };
+    }
+
     if (scheduledEmail.status === "CANCELLED") {
       console.log(
         `Job ${job.id} skipped because email is cancelled`
@@ -55,6 +98,65 @@ export const emailWorker = new Worker(
       return {
         skipped: true,
         reason: `Campaign is ${scheduledEmail.campaign.status}`,
+      };
+    }
+
+    const lockKey = `email_lock:${scheduledEmailId}`;
+    const lockAcquired = await redis.set(lockKey, "LOCKED", "EX", 60, "NX");
+
+    if (!lockAcquired) {
+      console.log(
+        `[Idempotency Guard] Job ${job.id} skipped: Lock for email ${scheduledEmailId} is held by another worker.`
+      );
+      return {
+        skipped: true,
+        reason: "Duplicate execution prevented by Redis lock",
+      };
+    }
+
+    const rateLimitCheck = await checkAndIncrementHourlyRateLimit(
+      scheduledEmail.campaignId,
+      scheduledEmail.campaign.hourlyLimit
+    );
+
+    console.log(
+      `[Rate Limit Check] Campaign ${scheduledEmail.campaignId} hour count: ${rateLimitCheck.currentCount}/${rateLimitCheck.limit}`
+    );
+
+    if (!rateLimitCheck.allowed) {
+      const delaySeconds = Math.round(rateLimitCheck.resetTimeMs / 1000);
+      console.log(
+        `[Rate Limit Exceeded] Campaign ${scheduledEmail.campaignId} count (${rateLimitCheck.currentCount}) > limit (${rateLimitCheck.limit}). Postponing job ${job.id} for ${delaySeconds}s until next hour window.`
+      );
+
+      const { emailQueue } = await import("./queue.js");
+      await emailQueue.add(
+        "send-email",
+        {
+          scheduledEmailId: scheduledEmail.id,
+          recipient,
+          subject,
+          body,
+          index: job.data.index,
+        },
+        {
+          delay: rateLimitCheck.resetTimeMs,
+          jobId: `${scheduledEmail.id}-delayed-${Date.now()}`,
+        }
+      );
+
+      await prisma.scheduledEmail.update({
+        where: { id: scheduledEmailId },
+        data: {
+          status: "SCHEDULED",
+          scheduledAt: new Date(Date.now() + rateLimitCheck.resetTimeMs),
+        },
+      });
+
+      return {
+        postponed: true,
+        reason: "Hourly rate limit reached, postponed to next hour window",
+        resetTimeMs: rateLimitCheck.resetTimeMs,
       };
     }
 
@@ -84,11 +186,13 @@ export const emailWorker = new Worker(
     }
 
     try {
+      const jobIndex = typeof job.data.index === "number" ? job.data.index : job.attemptsMade;
       const result = await sendEmail(
         recipient,
         subject,
         body,
-        updatedEmailRecord.attempts
+        updatedEmailRecord.attempts,
+        jobIndex
       );
 
       await prisma.scheduledEmail.update({
@@ -124,7 +228,7 @@ export const emailWorker = new Worker(
       }
 
       console.log(
-        "Email sent successfully:",
+        `Email sent successfully via [${result.senderAddress}]:`,
         result.messageId
       );
 
@@ -180,12 +284,18 @@ export const emailWorker = new Worker(
       );
 
       throw error;
+    } finally {
+      await redis.del(lockKey);
     }
   },
   {
     connection: redis,
-    concurrency: 5,
+    concurrency: WORKER_CONCURRENCY,
   }
+);
+
+console.log(
+  `Worker initialized: BullMQ emailQueue running with WORKER_CONCURRENCY=${WORKER_CONCURRENCY}`
 );
 
 emailWorker.on("completed", (job) => {
