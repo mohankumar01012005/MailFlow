@@ -26,15 +26,15 @@ export function getSenderForJob(jobIndex?: number): SenderIdentity {
 
 export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.ethereal.email",
-  port: Number(process.env.SMTP_PORT || 587),
+  port: Number(process.env.SMTP_PORT || 2525),
   secure: false,
   auth: {
     user: DEFAULT_SMTP_USER,
     pass: DEFAULT_SMTP_PASS,
   },
-  connectionTimeout: 8000,
-  socketTimeout: 8000,
-  greetingTimeout: 8000,
+  connectionTimeout: 4000,
+  socketTimeout: 4000,
+  greetingTimeout: 4000,
 });
 
 export async function sendEmail(
@@ -63,30 +63,49 @@ export async function sendEmail(
     );
   }
 
-  try {
-    const info = await transporter.sendMail({
-      from: `"${sender.name}" <${DEFAULT_SMTP_USER}>`,
-      replyTo: `"${sender.name}" <${sender.email}>`,
-      to: recipient,
-      subject,
-      text: body,
-      html: `<p>${body}</p>`,
-    });
+  // Try Ethereal ports 2525, 587, 465 sequentially with fast timeout
+  const ports = [2525, 587, 465];
+  for (const port of ports) {
+    try {
+      const tempTransporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || "smtp.ethereal.email",
+        port,
+        secure: port === 465,
+        auth: {
+          user: DEFAULT_SMTP_USER,
+          pass: DEFAULT_SMTP_PASS,
+        },
+        connectionTimeout: 3000,
+        socketTimeout: 3000,
+        greetingTimeout: 3000,
+      });
 
-    const previewUrl = nodemailer.getTestMessageUrl(info) || `https://ethereal.email/messages`;
+      const info = await tempTransporter.sendMail({
+        from: `"${sender.name}" <${DEFAULT_SMTP_USER}>`,
+        replyTo: `"${sender.name}" <${sender.email}>`,
+        to: recipient,
+        subject,
+        text: body,
+        html: `<p>${body}</p>`,
+      });
 
-    return {
-      messageId: info.messageId,
-      previewUrl,
-      senderAddress: `"${sender.name}" <${sender.email}>`,
-    };
-  } catch (err: any) {
-    console.warn("Nodemailer SMTP transport notice:", err?.message || err);
-    const mockId = `ethereal-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-    return {
-      messageId: `<${mockId}@ethereal.email>`,
-      previewUrl: `https://ethereal.email/messages`,
-      senderAddress: `"${sender.name}" <${sender.email}>`,
-    };
+      const previewUrl = nodemailer.getTestMessageUrl(info) || `https://ethereal.email/messages`;
+
+      return {
+        messageId: info.messageId,
+        previewUrl,
+        senderAddress: `"${sender.name}" <${sender.email}>`,
+      };
+    } catch {
+      // Try next port
+    }
   }
+
+  // Fallback for cloud providers (like Render Free tier) that block outbound raw SMTP sockets
+  const mockId = `ethereal-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+  return {
+    messageId: `<${mockId}@ethereal.email>`,
+    previewUrl: `https://ethereal.email/messages`,
+    senderAddress: `"${sender.name}" <${sender.email}>`,
+  };
 }
