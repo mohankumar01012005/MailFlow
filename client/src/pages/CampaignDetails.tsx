@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, RefreshCw } from "lucide-react";
+import { ArrowLeft, AlertTriangle, RefreshCw, Clock } from "lucide-react";
 import { useCampaign } from "../hooks/useCampaign";
 import { useCampaignEmails } from "../hooks/useCampaignEmails";
 import { useRetryEmail } from "../hooks/useRetryEmail";
@@ -12,9 +12,11 @@ import { CampaignActions } from "../components/campaigns/CampaignActions";
 import { CampaignOverview } from "../components/campaigns/CampaignOverview";
 import { EmailsTable } from "../components/emails/EmailsTable";
 import { formatDate } from "../lib/format";
+import { useToast } from "../context/ToastContext";
 
 export default function CampaignDetails() {
   const { campaignId } = useParams<{ campaignId: string }>();
+  const { showSuccess, showError } = useToast();
   const {
     data: campaignData,
     isLoading: isCampaignLoading,
@@ -29,6 +31,17 @@ export default function CampaignDetails() {
   } = useCampaignEmails(campaignId!);
 
   const { retryAll } = useRetryEmail(campaignId);
+
+  const handleRetryAll = () => {
+    retryAll.mutate(campaignId!, {
+      onSuccess: () => {
+        showSuccess("Batch Retry Queued", "Re-queued all failed emails for this campaign.");
+      },
+      onError: (err: any) => {
+        showError("Retry Failed", err.message || "Failed to retry campaign emails.");
+      },
+    });
+  };
 
   if (isCampaignLoading) {
     return (
@@ -78,6 +91,15 @@ export default function CampaignDetails() {
 
       <CampaignOverview stats={campaign.stats} />
 
+      {campaign.stats.scheduled > 0 && campaign.stats.sent >= campaign.hourlyLimit && (
+        <div className="flex items-center gap-2.5 rounded-xl border border-status-scheduled/30 bg-status-scheduled/10 p-4 text-xs text-status-scheduled font-medium">
+          <Clock className="h-4 w-4 shrink-0" />
+          <span>
+            Hourly Rate Limit Active: {campaign.stats.scheduled} remaining {campaign.stats.scheduled === 1 ? "email has" : "emails have"} been automatically postponed to the next hour window.
+          </span>
+        </div>
+      )}
+
       <Surface className="grid grid-cols-1 gap-6 p-6 sm:grid-cols-3">
         <div>
           <p className="text-xs text-text-tertiary">Start time</p>
@@ -106,7 +128,7 @@ export default function CampaignDetails() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => retryAll.mutate(campaign.id)}
+              onClick={handleRetryAll}
               isLoading={retryAll.isPending}
             >
               <RefreshCw className="h-3.5 w-3.5" />

@@ -84,6 +84,7 @@ export async function scheduleCampaign(
         recipient,
         subject: campaign.subject,
         body: campaign.body,
+        index,
       },
       {
         delay,

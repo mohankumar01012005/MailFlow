@@ -15,9 +15,12 @@ import { Skeleton } from "../components/ui/Skeleton";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Button } from "../components/ui/Button";
 
+import { useToast } from "../context/ToastContext";
+
 export default function Settings() {
   const { data, isLoading, isError, refetch } = useSettings();
   const sendTestEmail = useSendTestEmail();
+  const { showSuccess, showError } = useToast();
 
   const [testEmailRecipient, setTestEmailRecipient] = useState("");
   const [testSuccessMessage, setTestSuccessMessage] = useState<string | null>(null);
@@ -60,9 +63,13 @@ export default function Settings() {
     sendTestEmail.mutate(testEmailRecipient, {
       onSuccess: (res) => {
         setTestSuccessMessage(res.message);
+        showSuccess("Test Email Dispatched", `Diagnostic test email sent to ${testEmailRecipient}`);
         if (typeof res.result.previewUrl === "string") {
           setPreviewUrl(res.result.previewUrl);
         }
+      },
+      onError: (err: any) => {
+        showError("Test Email Failed", err.message || "Failed to dispatch test email.");
       },
     });
   }

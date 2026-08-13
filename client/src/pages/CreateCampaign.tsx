@@ -14,6 +14,8 @@ import { useAuth } from "../context/AuthContext";
 import type { Campaign, ScheduleCampaignCsvResponse } from "../types/campaign";
 import { cn } from "../lib/utils";
 
+import { useToast } from "../context/ToastContext";
+
 interface FormErrors {
   subject?: string;
   body?: string;
@@ -26,6 +28,7 @@ export default function CreateCampaign() {
   const navigate = useNavigate();
   const createCampaign = useCreateCampaign();
   const { user } = useAuth();
+  const { showSuccess, showInfo, showError } = useToast();
 
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -70,7 +73,15 @@ export default function CreateCampaign() {
         delayBetweenEmails,
         hourlyLimit,
       },
-      { onSuccess: (response) => setDraftCampaign(response.campaign) }
+      {
+        onSuccess: (response) => {
+          setDraftCampaign(response.campaign);
+          showSuccess("Draft Saved", `"${response.campaign.subject}" has been saved as a draft.`);
+        },
+        onError: (err: any) => {
+          showError("Failed to Save Draft", err.message || "Failed to create campaign draft.");
+        },
+      }
     );
   }
 
@@ -97,6 +108,7 @@ export default function CreateCampaign() {
       },
       {
         onSuccess: (res) => {
+          showInfo("Campaign Scheduled", `${res.totalRecipients} recipients scheduled into sending pipeline.`);
           setScheduleResult({
             success: true,
             message: res.message,
@@ -113,6 +125,9 @@ export default function CreateCampaign() {
             },
             scheduledEmails: res.scheduledEmails,
           });
+        },
+        onError: (err: any) => {
+          showError("Scheduling Error", err.message || "Failed to schedule campaign recipients.");
         },
       }
     );
