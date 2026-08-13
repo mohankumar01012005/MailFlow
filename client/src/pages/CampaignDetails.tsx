@@ -1,7 +1,8 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { ArrowLeft, AlertTriangle, RefreshCw } from "lucide-react";
 import { useCampaign } from "../hooks/useCampaign";
 import { useCampaignEmails } from "../hooks/useCampaignEmails";
+import { useRetryEmail } from "../hooks/useRetryEmail";
 import { Badge } from "../components/ui/Badge";
 import { Surface } from "../components/ui/Surface";
 import { Skeleton } from "../components/ui/Skeleton";
@@ -26,6 +27,8 @@ export default function CampaignDetails() {
     isError: isEmailsError,
     refetch: refetchEmails,
   } = useCampaignEmails(campaignId!);
+
+  const { retryAll } = useRetryEmail(campaignId);
 
   if (isCampaignLoading) {
     return (
@@ -97,8 +100,19 @@ export default function CampaignDetails() {
       </Surface>
 
       <Surface className="overflow-hidden">
-        <div className="border-b border-border px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h3 className="text-sm font-semibold text-text-primary">Email activity</h3>
+          {campaign.stats.failed > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => retryAll.mutate(campaign.id)}
+              isLoading={retryAll.isPending}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry Failed ({campaign.stats.failed})
+            </Button>
+          )}
         </div>
         <EmailsTable
           emails={emailsData?.emails}

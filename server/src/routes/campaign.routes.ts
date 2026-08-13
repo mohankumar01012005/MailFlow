@@ -15,6 +15,7 @@ import {
   resumeCampaignController,
   cancelCampaignController,
 } from "../controllers/campaign-lifecycle.controller.js";
+import { retryAllFailedEmailsController } from "../controllers/email.controller.js";
 
 const router = Router();
 
@@ -56,6 +57,11 @@ router.post(
 router.post(
   "/:campaignId/cancel",
   cancelCampaignController
+);
+
+router.post(
+  "/:campaignId/retry-failed",
+  retryAllFailedEmailsController
 );
 
 export default router;

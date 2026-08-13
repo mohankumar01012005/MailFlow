@@ -1,8 +1,12 @@
 import { Router } from "express";
-import { scheduleEmailController } from "../controllers/email.controller.js";
+import {
+  scheduleEmailController,
+  retryEmailController,
+} from "../controllers/email.controller.js";
 
 const router = Router();
 
 router.post("/", scheduleEmailController);
+router.post("/:emailId/retry", retryEmailController);
 
 export default router;

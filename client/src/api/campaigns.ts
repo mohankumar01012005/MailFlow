@@ -7,7 +7,7 @@ import type {
   ScheduleCampaignResponse,
   ScheduleCampaignCsvResponse,
 } from "../types/campaign";
-import type { CampaignEmailsResponse } from "../types/email";
+import type { CampaignEmailsResponse, ScheduledEmail } from "../types/email";
 
 export interface CreateCampaignPayload {
   // TEMPORARY: sent explicitly until real auth exists. Once auth is
@@ -66,5 +66,15 @@ export const campaignsApi = {
   cancel: (campaignId: string) =>
     apiClient.post<{ success: boolean; campaign: Campaign }>(
       `/api/campaigns/${campaignId}/cancel`
+    ),
+
+  retryEmail: (emailId: string) =>
+    apiClient.post<{ success: boolean; message: string; email: ScheduledEmail }>(
+      `/api/emails/${emailId}/retry`
+    ),
+
+  retryFailedEmails: (campaignId: string) =>
+    apiClient.post<{ success: boolean; count: number; message: string }>(
+      `/api/campaigns/${campaignId}/retry-failed`
     ),
 };
