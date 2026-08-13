@@ -8,32 +8,30 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  googleId  String?  @unique
+  id        String     @id @default(cuid())
+  googleId  String?    @unique
   name      String
-  email     String   @unique
-  password  String?
+  email     String     @unique
   avatarUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  password  String?
   campaigns Campaign[]
 }
 
 model Campaign {
-  id                 String         @id @default(cuid())
+  id                 String           @id @default(cuid())
   userId             String
   subject            String
   body               String
   startTime          DateTime
   delayBetweenEmails Int
   hourlyLimit        Int
-  status             CampaignStatus @default(DRAFT)
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
-
-  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  emails ScheduledEmail[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  status             CampaignStatus   @default(DRAFT)
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emails             ScheduledEmail[]
 
   @@index([userId])
   @@index([status])
@@ -54,8 +52,7 @@ model ScheduledEmail {
   errorMessage String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
-
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign     Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@index([campaignId])
   @@index([status])
