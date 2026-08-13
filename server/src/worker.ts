@@ -58,7 +58,7 @@ export const emailWorker = new Worker(
       };
     }
 
-    await prisma.scheduledEmail.update({
+    const updatedEmailRecord = await prisma.scheduledEmail.update({
       where: {
         id: scheduledEmailId,
       },
@@ -87,7 +87,8 @@ export const emailWorker = new Worker(
       const result = await sendEmail(
         recipient,
         subject,
-        body
+        body,
+        updatedEmailRecord.attempts
       );
 
       await prisma.scheduledEmail.update({
