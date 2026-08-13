@@ -10,6 +10,7 @@ import { Button } from "../components/ui/Button";
 import { Surface } from "../components/ui/Surface";
 import { useCreateCampaign } from "../hooks/useCreateCampaign";
 import { useScheduleCampaign } from "../hooks/useScheduleCampaign";
+import { useAuth } from "../context/AuthContext";
 import type { Campaign, ScheduleCampaignCsvResponse } from "../types/campaign";
 import { cn } from "../lib/utils";
 
@@ -24,6 +25,7 @@ interface FormErrors {
 export default function CreateCampaign() {
   const navigate = useNavigate();
   const createCampaign = useCreateCampaign();
+  const { user } = useAuth();
 
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -61,7 +63,7 @@ export default function CreateCampaign() {
     if (!validate()) return;
     createCampaign.mutate(
       {
-        userId: import.meta.env.VITE_DEV_USER_ID,
+        userId: user?.id ?? import.meta.env.VITE_DEV_USER_ID,
         subject,
         body,
         startTime: new Date(startTime).toISOString(),

@@ -4,20 +4,33 @@ import emailRoutes from "./routes/email.routes.js";
 import recipientRoutes from "./routes/recipient.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
-import cors from 'cors'
+import authRoutes from "./routes/auth.routes.js";
+import { securityHeadersMiddleware } from "./middleware/security.js";
+import { globalApiLimiter } from "./middleware/rate-limiter.js";
+import { authMiddleware } from "./middleware/auth.middleware.js";
+import cors from 'cors';
+
 const app = express();
+
 app.use(cors({
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}))
+}));
+
+app.use(securityHeadersMiddleware);
+app.use("/api", globalApiLimiter);
 app.use(express.json());
 
-app.use("/api/campaigns", campaignRoutes);
-app.use("/api/emails", emailRoutes);
-app.use("/api/recipients", recipientRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/settings", settingsRoutes);
+// Public routes
+app.use("/api/auth", authRoutes);
+
+// Protected routes (require valid JWT Bearer token)
+app.use("/api/campaigns", authMiddleware, campaignRoutes);
+app.use("/api/emails", authMiddleware, emailRoutes);
+app.use("/api/recipients", authMiddleware, recipientRoutes);
+app.use("/api/dashboard", authMiddleware, dashboardRoutes);
+app.use("/api/settings", authMiddleware, settingsRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({

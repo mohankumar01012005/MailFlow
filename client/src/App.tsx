@@ -1,4 +1,4 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, Navigate } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
 import Dashboard from "./pages/Dashboard";
 import Campaigns from "./pages/Campaigns";
@@ -6,7 +6,29 @@ import CreateCampaign from "./pages/CreateCampaign";
 import CampaignDetails from "./pages/CampaignDetails";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import { Button } from "./components/ui/Button";
+import { Skeleton } from "./components/ui/Skeleton";
+import { useAuth } from "./context/AuthContext";
+
+function ProtectedLayout() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-surface-base">
+        <Skeleton className="h-12 w-12 rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <AppShell />;
+}
 
 function NotFound() {
   return (
@@ -25,7 +47,9 @@ function NotFound() {
 function App() {
   return (
     <Routes>
-      <Route element={<AppShell />}>
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route element={<ProtectedLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/campaigns" element={<Campaigns />} />
         <Route path="/campaigns/new" element={<CreateCampaign />} />

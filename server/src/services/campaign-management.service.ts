@@ -1,7 +1,8 @@
 import { prisma } from "../prisma.js";
 
-export async function getAllCampaigns() {
+export async function getAllCampaigns(userId?: string) {
   const campaigns = await prisma.campaign.findMany({
+    where: userId ? { userId } : {},
     orderBy: {
       createdAt: "desc",
     },
@@ -63,12 +64,11 @@ export async function getAllCampaigns() {
   return campaignsWithStats;
 }
 
-export async function getCampaignById(
-  campaignId: string
-) {
-  const campaign = await prisma.campaign.findUnique({
+export async function getCampaignById(campaignId: string, userId?: string) {
+  const campaign = await prisma.campaign.findFirst({
     where: {
       id: campaignId,
+      ...(userId ? { userId } : {}),
     },
   });
 
@@ -119,12 +119,11 @@ export async function getCampaignById(
   };
 }
 
-export async function getCampaignEmails(
-  campaignId: string
-) {
-  const campaign = await prisma.campaign.findUnique({
+export async function getCampaignEmails(campaignId: string, userId?: string) {
+  const campaign = await prisma.campaign.findFirst({
     where: {
       id: campaignId,
+      ...(userId ? { userId } : {}),
     },
     select: {
       id: true,
