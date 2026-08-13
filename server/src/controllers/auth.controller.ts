@@ -102,15 +102,25 @@ export async function googleRedirectController(_req: Request, res: Response) {
 }
 
 export async function googleCallbackController(req: Request, res: Response) {
+  const getClientUrl = () => {
+    if (process.env.CLIENT_URL) return process.env.CLIENT_URL;
+    const host = req.get("host") || "";
+    if (host && !host.includes("localhost")) {
+      return "https://client-neon-eight.vercel.app";
+    }
+    return "http://localhost:5173";
+  };
+
+  const clientUrl = getClientUrl();
+
   try {
     const code = String(req.query.code || "");
     if (!code) {
-      return res.redirect("http://localhost:5173/login?error=Google%20auth%20cancelled");
+      return res.redirect(`${clientUrl}/login?error=Google%20auth%20cancelled`);
     }
 
     const { user, token } = await handleGoogleCallback(code);
 
-    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
     const redirectUrl = `${clientUrl}/login?token=${encodeURIComponent(
       token
     )}&user=${encodeURIComponent(JSON.stringify(user))}`;
@@ -118,7 +128,6 @@ export async function googleCallbackController(req: Request, res: Response) {
     return res.redirect(redirectUrl);
   } catch (error) {
     console.error("Google OAuth Error:", error);
-    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
     return res.redirect(
       `${clientUrl}/login?error=${encodeURIComponent(
         "Google authentication failed"
