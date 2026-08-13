@@ -3,9 +3,13 @@ import campaignRoutes from "./routes/campaign.routes.js";
 import emailRoutes from "./routes/email.routes.js";
 import recipientRoutes from "./routes/recipient.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
-
+import cors from 'cors'
 const app = express();
-
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}))
 app.use(express.json());
 
 app.use("/api/campaigns", campaignRoutes);
