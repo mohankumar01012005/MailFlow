@@ -91,7 +91,7 @@ export default function CampaignDetails() {
 
       <CampaignOverview stats={campaign.stats} />
 
-      {campaign.stats.scheduled > 0 && campaign.stats.sent >= campaign.hourlyLimit && (
+      {campaign.stats.scheduled > 0 && campaign.hourlyLimit && campaign.stats.sent >= campaign.hourlyLimit && (
         <div className="flex items-center gap-2.5 rounded-xl border border-status-scheduled/30 bg-status-scheduled/10 p-4 text-xs text-status-scheduled font-medium">
           <Clock className="h-4 w-4 shrink-0" />
           <span>

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, LogOut, LogIn, Settings, User as UserIcon, Shield, ChevronDown } from "lucide-react";
+import { Menu, LogOut, LogIn, Settings, Shield, ChevronDown } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 interface TopbarProps {

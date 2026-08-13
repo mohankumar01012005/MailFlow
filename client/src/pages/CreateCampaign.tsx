@@ -102,7 +102,7 @@ export default function CreateCampaign() {
     scheduleCampaign.mutate(
       {
         recipients: rawList,
-        startTime: draftCampaign.startTime,
+        startTime: typeof draftCampaign.startTime === "string" ? draftCampaign.startTime : new Date(draftCampaign.startTime ?? Date.now()).toISOString(),
         delayBetweenEmails: draftCampaign.delayBetweenEmails ?? 60,
         hourlyLimit: draftCampaign.hourlyLimit ?? 100,
       },
