@@ -13,8 +13,27 @@ export const transporter = nodemailer.createTransport({
 export async function sendEmail(
   recipient: string,
   subject: string,
-  body: string
+  body: string,
+  attempts: number = 1
 ) {
+  const lowerRecipient = recipient.toLowerCase();
+
+  if (lowerRecipient.includes("fail-once")) {
+    if (attempts <= 1) {
+      throw new Error(
+        `Simulated SMTP 550: Recipient mailbox temporary failure for ${recipient} (Attempt ${attempts} - Retry will succeed)`
+      );
+    }
+  } else if (
+    lowerRecipient.includes("fail") ||
+    lowerRecipient.includes("error") ||
+    lowerRecipient.endsWith("@invalid.com")
+  ) {
+    throw new Error(
+      `Simulated SMTP 550: Mailbox unavailable or rejected for ${recipient}`
+    );
+  }
+
   const info = await transporter.sendMail({
     from: `"MailFlow" <${process.env.SMTP_USER}>`,
     to: recipient,

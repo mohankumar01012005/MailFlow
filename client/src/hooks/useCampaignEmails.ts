@@ -6,5 +6,6 @@ export function useCampaignEmails(campaignId: string) {
     queryKey: ["campaign", campaignId, "emails"],
     queryFn: () => campaignsApi.getEmails(campaignId),
     enabled: !!campaignId,
+    refetchInterval: 2000,
   });
 }
