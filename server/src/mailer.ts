@@ -32,9 +32,8 @@ export const transporter = nodemailer.createTransport({
     user: DEFAULT_SMTP_USER,
     pass: DEFAULT_SMTP_PASS,
   },
-  connectionTimeout: 2000,
-  socketTimeout: 2000,
-  greetingTimeout: 2000,
+  connectionTimeout: 6000,
+  socketTimeout: 6000,
 });
 
 export async function sendEmail(
@@ -63,8 +62,20 @@ export async function sendEmail(
     );
   }
 
+  const clientTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.ethereal.email",
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: false,
+    auth: {
+      user: DEFAULT_SMTP_USER,
+      pass: DEFAULT_SMTP_PASS,
+    },
+    connectionTimeout: 6000,
+    socketTimeout: 6000,
+  });
+
   try {
-    const info = await transporter.sendMail({
+    const info = await clientTransporter.sendMail({
       from: `"${sender.name}" <${DEFAULT_SMTP_USER}>`,
       replyTo: `"${sender.name}" <${sender.email}>`,
       to: recipient,
@@ -81,7 +92,7 @@ export async function sendEmail(
       senderAddress: `"${sender.name}" <${sender.email}>`,
     };
   } catch (err: any) {
-    console.warn("Outbound SMTP connection notice:", err?.message || err);
+    console.warn("Outbound SMTP transport notice:", err?.message || err);
     const mockId = `ethereal-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     return {
       messageId: `<${mockId}@ethereal.email>`,
