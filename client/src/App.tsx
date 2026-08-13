@@ -28,6 +28,7 @@ function App() {
       <Route element={<AppShell />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/campaigns" element={<Campaigns />} />
+        <Route path="/campaigns/new" element={<CreateCampaign />} />
         <Route path="/campaigns/:campaignId" element={<CampaignDetails />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/settings" element={<Settings />} />
