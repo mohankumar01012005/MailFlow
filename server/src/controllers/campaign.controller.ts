@@ -13,6 +13,7 @@ export async function createCampaignController(
       startTime,
       delayBetweenEmails,
       hourlyLimit,
+      senderId,
     } = req.body;
 
     const targetUserId = req.user?.userId || req.body.userId;
@@ -33,6 +34,7 @@ export async function createCampaignController(
 
     const campaign = await createCampaign({
       userId: targetUserId,
+      senderId: senderId || null,
       subject,
       body,
       startTime: new Date(startTime),

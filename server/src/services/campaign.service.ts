@@ -2,6 +2,7 @@ import { prisma } from "../prisma.js";
 
 interface CreateCampaignInput {
   userId: string;
+  senderId?: string | null;
   subject: string;
   body: string;
   startTime: Date;
@@ -22,15 +23,30 @@ export async function createCampaign(input: CreateCampaignInput) {
     );
   }
 
+  let validSenderId: string | null = null;
+  if (input.senderId) {
+    const sender = await prisma.sender.findUnique({
+      where: { id: input.senderId },
+    });
+    if (!sender || sender.userId !== input.userId) {
+      throw new Error("Invalid sender identity or access denied");
+    }
+    validSenderId = sender.id;
+  }
+
   const campaign = await prisma.campaign.create({
     data: {
       userId: input.userId,
+      senderId: validSenderId,
       subject: input.subject,
       body: input.body,
       startTime: input.startTime,
       delayBetweenEmails: input.delayBetweenEmails,
       hourlyLimit: input.hourlyLimit,
       status: "DRAFT",
+    },
+    include: {
+      sender: true,
     },
   });
 

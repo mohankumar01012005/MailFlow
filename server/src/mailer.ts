@@ -42,9 +42,10 @@ export async function sendEmail(
   subject: string,
   body: string,
   attempts: number = 1,
-  jobIndex?: number
+  jobIndex?: number,
+  senderOverride?: SenderIdentity
 ) {
-  const sender = getSenderForJob(jobIndex);
+  const sender = senderOverride || getSenderForJob(jobIndex);
   const lowerRecipient = recipient.toLowerCase();
 
   if (lowerRecipient.includes("fail-once")) {

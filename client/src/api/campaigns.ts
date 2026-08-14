@@ -10,9 +10,8 @@ import type {
 import type { CampaignEmailsResponse, ScheduledEmail } from "../types/email";
 
 export interface CreateCampaignPayload {
-  // TEMPORARY: sent explicitly until real auth exists. Once auth is
-  // built, this should come from the session/token, not the payload.
   userId: string;
+  senderId?: string | null;
   subject: string;
   body: string;
   startTime: string;

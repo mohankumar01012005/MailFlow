@@ -4,6 +4,7 @@ import emailRoutes from "./routes/email.routes.js";
 import recipientRoutes from "./routes/recipient.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
+import senderRoutes from "./routes/sender.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import { securityHeadersMiddleware } from "./middleware/security.js";
 import { globalApiLimiter } from "./middleware/rate-limiter.js";
@@ -44,6 +45,7 @@ app.use("/api/emails", authMiddleware, emailRoutes);
 app.use("/api/recipients", authMiddleware, recipientRoutes);
 app.use("/api/dashboard", authMiddleware, dashboardRoutes);
 app.use("/api/settings", authMiddleware, settingsRoutes);
+app.use("/api/senders", authMiddleware, senderRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({

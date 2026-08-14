@@ -14,11 +14,13 @@ import { useAuth } from "../context/AuthContext";
 import type { Campaign, ScheduleCampaignCsvResponse } from "../types/campaign";
 import { cn } from "../lib/utils";
 
+import { useSenders } from "../hooks/useSenders";
 import { useToast } from "../context/ToastContext";
 
 interface FormErrors {
   subject?: string;
   body?: string;
+  senderId?: string;
   startTime?: string;
   delayBetweenEmails?: string;
   hourlyLimit?: string;
@@ -29,9 +31,11 @@ export default function CreateCampaign() {
   const createCampaign = useCreateCampaign();
   const { user } = useAuth();
   const { showSuccess, showInfo, showError } = useToast();
+  const { data: sendersData, isLoading: isLoadingSenders } = useSenders();
 
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [senderId, setSenderId] = useState("");
   const [startTime, setStartTime] = useState("");
   const [delayBetweenEmails, setDelayBetweenEmails] = useState(60);
   const [hourlyLimit, setHourlyLimit] = useState(100);
@@ -39,6 +43,8 @@ export default function CreateCampaign() {
 
   const [draftCampaign, setDraftCampaign] = useState<Campaign | null>(null);
   const [scheduleResult, setScheduleResult] = useState<ScheduleCampaignCsvResponse | null>(null);
+
+  const senders = sendersData?.senders || [];
 
   // Recipient input mode: CSV or Manual
   const [recipientTab, setRecipientTab] = useState<"csv" | "manual">("csv");
@@ -49,6 +55,9 @@ export default function CreateCampaign() {
 
   function validate(): boolean {
     const next: FormErrors = {};
+    if (senders.length > 0 && !senderId) {
+      next.senderId = "Please select a sender identity for this campaign.";
+    }
     if (!subject.trim()) next.subject = "Subject is required.";
     if (!body.trim()) next.body = "Email body is required.";
     if (!startTime) {
@@ -67,6 +76,7 @@ export default function CreateCampaign() {
     createCampaign.mutate(
       {
         userId: user?.id ?? import.meta.env.VITE_DEV_USER_ID,
+        senderId: senderId || null,
         subject,
         body,
         startTime: new Date(startTime).toISOString(),
@@ -256,8 +266,12 @@ export default function CreateCampaign() {
       <CampaignDetailsSection
         subject={subject}
         body={body}
+        senderId={senderId}
+        senders={senders}
+        isLoadingSenders={isLoadingSenders}
         onSubjectChange={setSubject}
         onBodyChange={setBody}
+        onSenderChange={setSenderId}
         errors={errors}
       />
 

@@ -1,0 +1,67 @@
+warning: in the working copy of 'server/prisma/schema.prisma', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/server/prisma/schema.prisma b/server/prisma/schema.prisma[m
+[1mindex 8486221..e1f7171 100644[m
+[1m--- a/server/prisma/schema.prisma[m
+[1m+++ b/server/prisma/schema.prisma[m
+[36m@@ -8,32 +8,30 @@[m [mdatasource db {[m
+ }[m
+ [m
+ model User {[m
+[31m-  id        String   @id @default(cuid())[m
+[31m-  googleId  String?  @unique[m
+[32m+[m[32m  id        String     @id @default(cuid())[m
+[32m+[m[32m  googleId  String?    @unique[m
+   name      String[m
+[31m-  email     String   @unique[m
+[31m-  password  String?[m
+[32m+[m[32m  email     String     @unique[m
+   avatarUrl String?[m
+[31m-  createdAt DateTime @default(now())[m
+[31m-  updatedAt DateTime @updatedAt[m
+[31m-[m
+[32m+[m[32m  createdAt DateTime   @default(now())[m
+[32m+[m[32m  updatedAt DateTime   @updatedAt[m
+[32m+[m[32m  password  String?[m
+   campaigns Campaign[][m
+ }[m
+ [m
+ model Campaign {[m
+[31m-  id                 String         @id @default(cuid())[m
+[32m+[m[32m  id                 String           @id @default(cuid())[m
+   userId             String[m
+   subject            String[m
+   body               String[m
+   startTime          DateTime[m
+   delayBetweenEmails Int[m
+   hourlyLimit        Int[m
+[31m-  status             CampaignStatus @default(DRAFT)[m
+[31m-  createdAt           DateTime       @default(now())[m
+[31m-  updatedAt           DateTime       @updatedAt[m
+[31m-[m
+[31m-  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+[31m-  emails ScheduledEmail[][m
+[32m+[m[32m  createdAt          DateTime         @default(now())[m
+[32m+[m[32m  updatedAt          DateTime         @updatedAt[m
+[32m+[m[32m  status             CampaignStatus   @default(DRAFT)[m
+[32m+[m[32m  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  emails             ScheduledEmail[][m
+ [m
+   @@index([userId])[m
+   @@index([status])[m
+[36m@@ -54,8 +52,7 @@[m [mmodel ScheduledEmail {[m
+   errorMessage String?[m
+   createdAt    DateTime    @default(now())[m
+   updatedAt    DateTime    @updatedAt[m
+[31m-[m
+[31m-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)[m
+[32m+[m[32m  campaign     Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)[m
+ [m
+   @@index([campaignId])[m
+   @@index([status])[m
+[36m@@ -77,4 +74,4 @@[m [menum EmailStatus {[m
+   SENT[m
+   FAILED[m
+   CANCELLED[m
+[31m-}[m
+\ No newline at end of file[m
+[32m+[m[32m}[m

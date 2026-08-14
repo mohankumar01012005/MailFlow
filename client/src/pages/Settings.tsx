@@ -17,6 +17,8 @@ import { Button } from "../components/ui/Button";
 
 import { useToast } from "../context/ToastContext";
 
+import { SenderManagementSection } from "../components/settings/SenderManagementSection";
+
 export default function Settings() {
   const { data, isLoading, isError, refetch } = useSettings();
   const sendTestEmail = useSendTestEmail();
@@ -85,6 +87,9 @@ export default function Settings() {
           Manage your email transport layer, default sending parameters, and diagnostic tools.
         </p>
       </div>
+
+      {/* User-Scoped Sender Identity Management */}
+      <SenderManagementSection />
 
       {/* SMTP Transport Card */}
       <Surface className="p-6 space-y-4">

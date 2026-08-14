@@ -1,3 +1,5 @@
+import type { Sender } from "./sender";
+
 export type CampaignStatus =
   | "DRAFT"
   | "SCHEDULED"
@@ -9,6 +11,8 @@ export type CampaignStatus =
 export interface Campaign {
   id: string;
   userId: string;
+  senderId?: string | null;
+  sender?: Sender | null;
   subject: string;
   body: string;
   startTime: string | null;
