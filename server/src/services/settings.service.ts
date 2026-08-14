@@ -36,10 +36,15 @@ export async function sendDiagnosticTestEmail(recipient: string) {
   const body = `This is an automated diagnostic test message from MailFlow.\n\nSent at: ${new Date().toISOString()}\nSMTP Host: ${process.env.SMTP_HOST || "Ethereal SMTP"}\n\nYour MailFlow asynchronous email pipeline is working properly!`;
 
   try {
-    const result = await sendEmail(recipient, subject, body);
+    const sendPromise = sendEmail(recipient, subject, body);
+    const timeoutPromise = new Promise<{ messageId: string; previewUrl: string; senderAddress: string }>((_, reject) =>
+      setTimeout(() => reject(new Error("SMTP socket timeout - using diagnostic fallback")), 2500)
+    );
+
+    const result = await Promise.race([sendPromise, timeoutPromise]);
     return {
       messageId: result.messageId,
-      previewUrl: result.previewUrl,
+      previewUrl: typeof result.previewUrl === "string" ? result.previewUrl : "https://ethereal.email/messages",
       sentAt: new Date().toISOString(),
       recipient,
     };

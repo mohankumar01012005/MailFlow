@@ -62,14 +62,17 @@ export default function Settings() {
 
     sendTestEmail.mutate(testEmailRecipient, {
       onSuccess: (res) => {
-        setTestSuccessMessage(res.message);
-        showSuccess("Test Email Dispatched", `Diagnostic test email sent to ${testEmailRecipient}`);
-        if (typeof res.result.previewUrl === "string") {
+        const msg = res?.message || `Diagnostic test email sent successfully to ${testEmailRecipient}`;
+        setTestSuccessMessage(msg);
+        showSuccess("Test Email Dispatched", msg);
+        if (res?.result?.previewUrl && typeof res.result.previewUrl === "string") {
           setPreviewUrl(res.result.previewUrl);
+        } else {
+          setPreviewUrl("https://ethereal.email/messages");
         }
       },
       onError: (err: any) => {
-        showError("Test Email Failed", err.message || "Failed to dispatch test email.");
+        showError("Test Email Failed", err?.message || "Failed to dispatch test email.");
       },
     });
   }

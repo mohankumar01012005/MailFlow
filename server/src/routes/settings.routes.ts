@@ -8,6 +8,6 @@ import { strictActionLimiter } from "../middleware/rate-limiter.js";
 const router = Router();
 
 router.get("/", getSettingsController);
-router.post("/test-email", strictActionLimiter, sendTestEmailController);
+router.post("/test-email", sendTestEmailController);
 
 export default router;
