@@ -88,10 +88,12 @@ export async function retryFailedEmail(emailId: string) {
     }
   );
 
+  const now = new Date();
   const updatedEmail = await prisma.scheduledEmail.update({
     where: { id: email.id },
     data: {
       status: "SCHEDULED",
+      scheduledAt: now,
       failedAt: null,
       errorMessage: null,
       bullJobId: job.id,
@@ -118,6 +120,7 @@ export async function retryAllFailedEmails(campaignId: string) {
     return { count: 0, message: "No failed emails to retry." };
   }
 
+  const now = new Date();
   for (const email of failedEmails) {
     if (email.bullJobId) {
       try {
@@ -148,6 +151,7 @@ export async function retryAllFailedEmails(campaignId: string) {
       where: { id: email.id },
       data: {
         status: "SCHEDULED",
+        scheduledAt: now,
         failedAt: null,
         errorMessage: null,
         bullJobId: job.id,

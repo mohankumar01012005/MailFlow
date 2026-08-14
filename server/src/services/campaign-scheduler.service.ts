@@ -50,6 +50,7 @@ export async function scheduleCampaign(
 
   const scheduledEmails = [];
 
+  const now = Date.now();
   for (
     let index = 0;
     index < uniqueRecipients.length;
@@ -61,6 +62,8 @@ export async function scheduleCampaign(
       startTime.getTime() + index * delayInterval
     );
 
+    const isElapsed = scheduledAt.getTime() < now - 5000;
+
     const scheduledEmail =
       await prisma.scheduledEmail.create({
         data: {
@@ -69,46 +72,55 @@ export async function scheduleCampaign(
           subject: campaign.subject,
           body: campaign.body,
           scheduledAt,
+          status: isElapsed ? "FAILED" : "SCHEDULED",
+          failedAt: isElapsed ? new Date() : null,
+          errorMessage: isElapsed ? "Scheduled start time elapsed before dispatch" : null,
         },
       });
 
-    const delay = Math.max(
-      scheduledAt.getTime() - Date.now(),
-      0
-    );
+    if (!isElapsed) {
+      const delay = Math.max(
+        scheduledAt.getTime() - now,
+        0
+      );
 
-    const job = await emailQueue.add(
-      "send-email",
-      {
-        scheduledEmailId: scheduledEmail.id,
-        recipient,
-        subject: campaign.subject,
-        body: campaign.body,
-        index,
-      },
-      {
-        delay,
-        jobId: scheduledEmail.id,
-      }
-    );
-
-    const updatedScheduledEmail =
-      await prisma.scheduledEmail.update({
-        where: {
-          id: scheduledEmail.id,
+      const job = await emailQueue.add(
+        "send-email",
+        {
+          scheduledEmailId: scheduledEmail.id,
+          recipient,
+          subject: campaign.subject,
+          body: campaign.body,
+          index,
         },
-        data: {
-          bullJobId: job.id,
-        },
-      });
+        {
+          delay,
+          jobId: scheduledEmail.id,
+        }
+      );
 
-    scheduledEmails.push(updatedScheduledEmail);
+      const updatedScheduledEmail =
+        await prisma.scheduledEmail.update({
+          where: {
+            id: scheduledEmail.id,
+          },
+          data: {
+            bullJobId: job.id,
+          },
+        });
+
+      scheduledEmails.push(updatedScheduledEmail);
+    } else {
+      scheduledEmails.push(scheduledEmail);
+    }
   }
 
-  const campaignStatus =
-    startTime.getTime() > Date.now()
-      ? "SCHEDULED"
-      : "RUNNING";
+  const allFailed = scheduledEmails.length > 0 && scheduledEmails.every((e) => e.status === "FAILED");
+  const campaignStatus = allFailed
+    ? "COMPLETED"
+    : startTime.getTime() > Date.now()
+    ? "SCHEDULED"
+    : "RUNNING";
 
   const updatedCampaign =
     await prisma.campaign.update({

@@ -55,7 +55,11 @@ export const emailWorker = new Worker(
           id: scheduledEmailId,
         },
         include: {
-          campaign: true,
+          campaign: {
+            include: {
+              sender: true,
+            },
+          },
         },
       });
 
@@ -98,6 +102,27 @@ export const emailWorker = new Worker(
       return {
         skipped: true,
         reason: `Campaign is ${scheduledEmail.campaign.status}`,
+      };
+    }
+
+    if (
+      scheduledEmail.status === "SCHEDULED" &&
+      scheduledEmail.scheduledAt.getTime() < Date.now() - 120000
+    ) {
+      console.warn(
+        `[Elapsed Time Guard] Job ${job.id} elapsed before execution: Scheduled at ${scheduledEmail.scheduledAt.toISOString()}`
+      );
+      await prisma.scheduledEmail.update({
+        where: { id: scheduledEmailId },
+        data: {
+          status: "FAILED",
+          failedAt: new Date(),
+          errorMessage: "Scheduled start time elapsed before dispatch",
+        },
+      });
+      return {
+        skipped: true,
+        reason: "Scheduled start time elapsed before dispatch",
       };
     }
 
@@ -187,12 +212,17 @@ export const emailWorker = new Worker(
 
     try {
       const jobIndex = typeof job.data.index === "number" ? job.data.index : job.attemptsMade;
+      const customSender = scheduledEmail.campaign.sender
+        ? { name: scheduledEmail.campaign.sender.name, email: scheduledEmail.campaign.sender.email }
+        : undefined;
+
       const result = await sendEmail(
         recipient,
         subject,
         body,
         updatedEmailRecord.attempts,
-        jobIndex
+        jobIndex,
+        customSender
       );
 
       await prisma.scheduledEmail.update({
