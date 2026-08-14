@@ -5,8 +5,8 @@ export interface SenderIdentity {
   email: string;
 }
 
-const DEFAULT_SMTP_USER = process.env.SMTP_USER || "esperanza.little20@ethereal.email";
-const DEFAULT_SMTP_PASS = process.env.SMTP_PASS || "JTRZpbnN2aqrZxetDq";
+const DEFAULT_SMTP_USER = process.env.SMTP_USER || "marcellus.lang@ethereal.email";
+const DEFAULT_SMTP_PASS = process.env.SMTP_PASS || "uhYcw8emGm4Ruf7fRt";
 
 export const SENDER_POOL: SenderIdentity[] = [
   { name: "MailFlow Campaigns", email: `campaigns.${DEFAULT_SMTP_USER}` },

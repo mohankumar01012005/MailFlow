@@ -3,7 +3,7 @@ import { sendEmail } from "../mailer.js";
 export async function getSettingsData() {
   const host = process.env.SMTP_HOST || "smtp.ethereal.email";
   const port = Number(process.env.SMTP_PORT) || 587;
-  const user = process.env.SMTP_USER || "esperanza.little20@ethereal.email";
+  const user = process.env.SMTP_USER || "marcellus.lang@ethereal.email";
   const isEthereal = host.includes("ethereal");
 
   return {

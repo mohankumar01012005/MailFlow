@@ -132,8 +132,8 @@ JWT_SECRET="production-jwt-secret-key-change-this"
 # Ethereal Email Credentials
 SMTP_HOST="smtp.ethereal.email"
 SMTP_PORT=587
-SMTP_USER="esperanza.little20@ethereal.email"
-SMTP_PASS="JTRZpbnN2aqrZxetDq"
+SMTP_USER="marcellus.lang@ethereal.email"
+SMTP_PASS="uhYcw8emGm4Ruf7fRt"
 
 # Google OAuth Credentials
 GOOGLE_CLIENT_ID="787050108865-vllv0to5rkjnet4qvh17g725v2ghj48m.apps.googleusercontent.com"
