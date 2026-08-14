@@ -30,11 +30,17 @@ export function Dialog({
 
   useEffect(() => {
     if (!open) return;
+    if (dialogRef.current && !dialogRef.current.contains(document.activeElement)) {
+      dialogRef.current.focus();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", handleKeyDown);
-    dialogRef.current?.focus();
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);
 
